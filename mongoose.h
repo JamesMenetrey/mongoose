@@ -642,6 +642,10 @@ int sscanf(const char *, const char *, ...);
 #define MG_ENABLE_OPENSSL 0
 #endif
 
+#ifndef MG_ENABLE_WOLFSSL
+#define MG_ENABLE_WOLFSSL 0
+#endif
+
 #ifndef MG_ENABLE_CUSTOM_TLS
 #define MG_ENABLE_CUSTOM_TLS 0
 #endif
@@ -1188,6 +1192,7 @@ void mg_http_serve_ssi(struct mg_connection *c, const char *root,
 
 
 
+
 struct mg_tls_opts {
   const char *ca;         // CA certificate file. For both listeners and clients
   const char *crl;        // Certificate Revocation List. For clients
@@ -1235,6 +1240,18 @@ struct mg_tls {
 struct mg_tls {
   SSL_CTX *ctx;
   SSL *ssl;
+};
+#endif
+
+
+#if MG_ENABLE_WOLFSSL
+
+#include <wolfssl/options.h>
+#include <wolfssl/ssl.h>          /* wolfSSL secure read/write methods */
+
+struct mg_tls {
+  WOLFSSL_CTX *ctx;
+  WOLFSSL *ssl;
 };
 #endif
 
