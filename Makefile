@@ -23,6 +23,15 @@ VALGRIND_CFLAGS ?= $(OPTS) $(COMMON_CFLAGS)
 VALGRIND_RUN ?= valgrind --tool=memcheck --gen-suppressions=all --leak-check=full --show-leak-kinds=all --leak-resolution=high --track-origins=yes --error-exitcode=1 --exit-on-first-error=yes
 .PHONY: examples test valgrind
 
+ifeq ($(WASM), 1)
+WASI_SDK_PATH ?= /opt/wasi-sdk
+WAMR_PATH ?= /opt/wamr
+ASAN=
+CFLAGS += -DMG_ARCH=1 -DWOLFSSL_WASM=1 -DWOLFSSL_AES_DIRECT -DHAVE_AES_KEYWRAP -DHAVE_CAMELLIA -DWOLFSSL_SHA224 -DWOLFSSL_SHA512 -DWOLFSSL_SHA384 -DHAVE_HKDF -DNO_DSA -DTFM_ECC256 -DECC_SHAMIR -DWC_RSA_PSS -DWOLFSSL_DH_EXTRA -DWOLFSSL_BASE64_ENCODE -DWOLFSSL_SHA3 -DHAVE_POLY1305 -DHAVE_ONE_TIME_AUTH -DHAVE_CHACHA -DHAVE_HASHDRBG -DHAVE_OPENSSL_CMD -DHAVE_CRL -DHAVE_TLS_EXTENSIONS -DHAVE_SUPPORTED_CURVES -DHAVE_FFDHE_2048 -DHAVE_SUPPORTED_CURVES
+INCS += -I$(WAMR_PATH)/core/iwasm/libraries/lib-socket/inc
+WARN += -Wno-sign-conversion -Wno-unused-variable -Wno-unused-parameter -Wno-sign-compare -Wno-unused-function
+endif
+
 ifeq "$(SSL)" "MBEDTLS"
 MBEDTLS ?= /usr/local
 CFLAGS  += -DMG_ENABLE_MBEDTLS=1 -I$(MBEDTLS)/include -I/usr/include
@@ -35,9 +44,11 @@ CFLAGS  += -DMG_ENABLE_OPENSSL=1 -I$(OPENSSL)/include
 LDFLAGS ?= -L$(OPENSSL)/lib -lssl -lcrypto
 endif
 ifeq "$(SSL)" "WOLFSSL"
-WOLFSSL ?= /usr/local
+#WOLFSSL ?= /usr/local
+WOLFSSL ?= /home/ubuntu/dev/github/wolfssl/
+CFLAGS  += -DMG_ENABLE_WOLFSSL=1 -I$(WOLFSSL)
 CFLAGS  += -DMG_ENABLE_WOLFSSL=1 -I$(WOLFSSL)/include
-LDFLAGS ?= -L$(WOLFSSL)/lib -lwolfssl
+LDFLAGS ?= -L/home/ubuntu/dev/github/wolfssl/IDE/Wasm -lwolfssl
 ifdef MG_ENABLE_WOLFSSL_DEBUG
 CFLAGS += -DMG_ENABLE_WOLFSSL_DEBUG
 endif
@@ -113,6 +124,18 @@ valgrind_unit_test: Makefile mongoose.h $(SRCS)
 
 valgrind: valgrind_unit_test
 	$(VALGRIND_RUN) ./valgrind_unit_test
+
+wasm: Makefile mongoose.h $(SRCS)
+# Preprocess, compile and assemble WolfSSL in Wasm  -Wl,--export=__heap_base -Wl,--export=__data_end
+	$(WASI_SDK_PATH)/bin/clang \
+		--target=wasm32-wasi \
+		-z stack-size=655360 \
+		--sysroot=$(WASI_SDK_PATH)/share/wasi-sysroot/ \
+		-Wl,--allow-undefined-file=$(WASI_SDK_PATH)/share/wasi-sysroot/share/wasm32-wasi/defined-symbols.txt \
+		-Wl,--strip-all \
+		$(CFLAGS) \
+		$(LDFLAGS) \
+		$(SRCS) $(WAMR_PATH)/core/iwasm/libraries/lib-socket/src/wasi/wasi_socket_ext.c
 
 arm: DEFS += -DMG_ENABLE_FILE=0 -DMG_ENABLE_MIP=1 -DMG_ARCH=MG_ARCH_NEWLIB 
 arm: mongoose.h $(SRCS)

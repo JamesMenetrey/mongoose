@@ -21,10 +21,18 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <limits.h>
+
+#ifndef __wasi__
 #include <netdb.h>
+#endif
+
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+
+#ifndef __wasi__
 #include <signal.h>
+#endif
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -54,6 +62,10 @@
 
 #ifndef MG_PATH_MAX
 #define MG_PATH_MAX FILENAME_MAX
+#endif
+
+#ifdef __wasi__
+#include <wasi_socket_ext.h>
 #endif
 
 #endif
