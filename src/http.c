@@ -524,7 +524,9 @@ void mg_http_serve_file(struct mg_connection *c, struct mg_http_message *hm,
               etag, cl, gzip ? "Content-Encoding: gzip\r\n" : "", range,
               opts->extra_headers ? opts->extra_headers : "");
     if (mg_vcasecmp(&hm->method, "HEAD") == 0) {
+#ifndef __wasi__
       c->is_draining = 1;
+#endif
       c->is_resp = 0;
       mg_fs_close(fd);
     } else {
