@@ -2667,7 +2667,7 @@ int main(void) {
   test_commalist();
   test_base64();
   test_http_get_var();
-  //test_tls();
+  test_tls();
   test_ws();
   test_ws_fragmentation();
   test_http_client();
