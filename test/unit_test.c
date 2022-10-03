@@ -994,7 +994,6 @@ static void test_http_client(void) {
     ASSERT(c != NULL);
     mg_tls_init(c, &opts);
     for (i = 0; i < 1500 && ok <= 0; i++) mg_mgr_poll(&mgr, 1000);
-    printf("->>>>> %d\n", ok);
     ASSERT(ok == 200);
     c->is_closing = 1;
     mg_mgr_poll(&mgr, 1);
