@@ -1066,7 +1066,9 @@ static void test_http_no_content_length(void) {
   MG_INFO(("[%s] [%s]", buf1, buf2));
   ASSERT(strcmp(buf1, "fmc") == 0);
   printf("->>>>> %s\n", buf2);
-  //ASSERT(strcmp(buf2, "fcfm") == 0);  // See #1475
+#ifndef __wasi__
+  ASSERT(strcmp(buf2, "fcfm") == 0);  // See #1475
+#endif
   mg_mgr_free(&mgr);
   ASSERT(mgr.conns == NULL);
 }
